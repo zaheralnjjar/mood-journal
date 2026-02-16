@@ -1,0 +1,150 @@
+// Prisma schema - Supabase PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// المستخدم
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String?
+  name          String?
+  avatar        String?
+  phone         String?
+  
+  // معلومات Supabase Auth
+  supabaseId    String?   @unique
+  
+  // إعدادات المستخدم
+  settings      Json?
+  
+  // التواريخ
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // العلاقات
+  journals      JournalEntry[]
+  tags          Tag[]
+  templates     Template[]
+  favorites     Favorite[]
+  sessions      Session[]
+  
+  @@map("users")
+}
+
+// الجلسات
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  token        String   @unique
+  userAgent    String?
+  ipAddress    String?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([token])
+  @@index([userId])
+  @@map("sessions")
+}
+
+// اليوميات
+model JournalEntry {
+  id          String    @id @default(uuid())
+  title       String
+  content     Json
+  mood        String?
+  date        DateTime
+  location    Json?
+  weather     Json?
+  attachments Json?
+  templateId  String?
+  smartForms  Json?
+  
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  tags        JournalTag[]
+  favorites   Favorite[]
+  
+  @@index([userId])
+  @@index([date])
+  @@map("journal_entries")
+}
+
+// الوسوم
+model Tag {
+  id        String   @id @default(uuid())
+  name      String
+  color     String   @default("#8b5cf6")
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  journals  JournalTag[]
+  createdAt DateTime @default(now())
+  
+  @@unique([userId, name])
+  @@index([userId])
+  @@map("tags")
+}
+
+// علاقة اليوميات مع الوسوم
+model JournalTag {
+  journalId  String
+  tagId      String
+  
+  journal    JournalEntry @relation(fields: [journalId], references: [id], onDelete: Cascade)
+  tag        Tag          @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  
+  @@id([journalId, tagId])
+  @@map("journal_tags")
+}
+
+// المفضلة
+model Favorite {
+  id        String   @id @default(uuid())
+  userId    String
+  journalId String
+  
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  journal   JournalEntry @relation(fields: [journalId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime     @default(now())
+  
+  @@unique([userId, journalId])
+  @@map("favorites")
+}
+
+// القوالب
+model Template {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  icon        String   @default("📝")
+  category    String   @default("daily")
+  fields      Json
+  isPublic    Boolean  @default(false)
+  
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([category])
+  @@map("templates")
+}
