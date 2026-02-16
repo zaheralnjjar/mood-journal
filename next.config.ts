@@ -1,10 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Vercel يتكامل تلقائياً، لا حاجة لـ output: standalone
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   reactStrictMode: true,
   images: {
     remotePatterns: [
