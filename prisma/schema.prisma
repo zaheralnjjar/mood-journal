@@ -1,12 +1,13 @@
-// Prisma schema - SQLite for development, PostgreSQL (Supabase) for production
+// Prisma schema - Supabase PostgreSQL
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // المستخدم
