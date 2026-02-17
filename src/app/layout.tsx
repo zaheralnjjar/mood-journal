@@ -3,6 +3,7 @@ import { Cairo, Tajawal, Amiri } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/lib/auth-context";
+import { PWARegister } from "@/components/PWARegister";
 
 const cairo = Cairo({
   variable: "--font-cairo",
@@ -81,6 +82,7 @@ export default function RootLayout({
         style={{ fontFamily: 'var(--font-cairo), var(--font-tajawal), var(--font-amiri), sans-serif' }}
       >
         <AuthProvider>
+          <PWARegister />
           {children}
           <Toaster />
         </AuthProvider>

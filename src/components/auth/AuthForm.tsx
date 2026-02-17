@@ -2,15 +2,17 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Eye, EyeOff, Mail, Lock, User, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Loader2, UserCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useAuth } from '@/lib/auth-context';
 
 export function AuthForm({ mode = 'login' }: { mode?: 'login' | 'register' }) {
   const router = useRouter();
+  const { login, register, guestLogin } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -28,28 +30,28 @@ export function AuthForm({ mode = 'login' }: { mode?: 'login' | 'register' }) {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: isRegister ? 'register' : 'login',
-          email: formData.email,
-          password: formData.password,
-          name: formData.name,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'حدث خطأ');
+      if (isRegister) {
+        await register(formData.email, formData.password, formData.name);
+      } else {
+        await login(formData.email, formData.password);
       }
-
-      // نجح تسجيل الدخول
       router.push('/');
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'حدث خطأ');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGuestLogin = async () => {
+    setIsLoading(true);
+    try {
+      await guestLogin();
+      router.push('/');
+      router.refresh();
+    } catch (err) {
+      setError('حدث خطأ في الدخول كضيف');
     } finally {
       setIsLoading(false);
     }
@@ -152,31 +154,49 @@ export function AuthForm({ mode = 'login' }: { mode?: 'login' | 'register' }) {
               ) : null}
               {isRegister ? 'إنشاء الحساب' : 'تسجيل الدخول'}
             </Button>
+          </form>
 
-            <div className="relative my-4">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-gray-200 dark:border-gray-700" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white dark:bg-gray-800 px-2 text-gray-500">
-                  أو
-                </span>
-              </div>
+          <div className="relative my-4">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-gray-200 dark:border-gray-700" />
             </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white dark:bg-gray-800 px-2 text-gray-500">
+                أو
+              </span>
+            </div>
+          </div>
 
+          {/* زر الدخول كضيف */}
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full border-purple-200 text-purple-600 hover:bg-purple-50"
+            onClick={handleGuestLogin}
+            disabled={isLoading}
+          >
+            <UserCircle className="w-4 h-4 ml-2" />
+            الدخول كضيف
+          </Button>
+
+          <div className="mt-4 text-center">
             <button
               type="button"
               onClick={() => {
                 setIsRegister(!isRegister);
                 setError('');
               }}
-              className="w-full text-center text-sm text-purple-600 dark:text-purple-400 hover:underline"
+              className="text-sm text-purple-600 dark:text-purple-400 hover:underline"
             >
               {isRegister 
                 ? 'لديك حساب بالفعل؟ سجل دخولك'
                 : 'ليس لديك حساب؟ أنشئ واحداً'}
             </button>
-          </form>
+          </div>
+
+          <p className="mt-4 text-xs text-center text-gray-500">
+            * الضيف: بياناتك محفوظة محلياً فقط على هذا الجهاز
+          </p>
         </CardContent>
       </Card>
     </div>
